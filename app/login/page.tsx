@@ -1,35 +1,52 @@
 "use client"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ExternalLink, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
+import { auth } from "../firebase/config"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const router = useRouter()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) router.push("/")
+    })
+    return () => unsubscribe()
+  }, [router])
 
   const handleGoogleSignIn = async () => {
+    setIsLoading(true)
+    setError("")
     try {
-      setIsLoading(true)
-      setError("")
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+      window.location.href = "/"
+    } catch (error: any) {
+      setError(error.message || "Google sign in failed.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: "/",
-      })
-
-      if (result?.error) {
-        setError("Access denied. Only @varaheanalytics.com users are allowed.")
-      } else if (result?.url) {
-        window.location.href = result.url
-      }
-    } catch (error) {
-      console.error("Sign in error:", error)
-      setError("An error occurred during sign in. Please try again.")
+  const handleEmailSignIn = async () => {
+    setIsLoading(true)
+    setError("")
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      window.location.href = "/"
+    } catch (error: any) {
+      setError(error.message || "Email sign in failed.")
     } finally {
       setIsLoading(false)
     }
@@ -54,7 +71,7 @@ export default function LoginPage() {
           {/* Title Section */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-semibold">Build with Claude</h1>
-            <p className="text-gray-400 text-lg">Sign in with your Varahe Analytics account to access the platform</p>
+            <p className="text-gray-400 text-lg">Sign in to access the platform</p>
           </div>
 
           {/* Error Alert */}
@@ -98,21 +115,6 @@ export default function LoginPage() {
               {isLoading ? "Signing in..." : "Continue with Google"}
             </Button>
 
-            {/* Domain Restriction Notice */}
-            <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">!</span>
-                </div>
-                <div>
-                  <h3 className="text-blue-200 font-medium mb-1">Restricted Access</h3>
-                  <p className="text-blue-300 text-sm">
-                    Only users with <strong>@varaheanalytics.com</strong> email addresses can access this platform.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -123,16 +125,28 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email Input - Disabled */}
-            <div className="space-y-4 opacity-50">
+            {/* Email/Password Input - Enabled */}
+            <div className="space-y-4">
               <Input
                 type="email"
-                placeholder="Enter your @varaheanalytics.com email"
-                disabled
+                placeholder="Enter your email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 className="w-full h-12 bg-gray-800 border-gray-600 text-white placeholder-gray-400"
               />
-              <Button disabled className="w-full h-12 bg-gray-600 text-gray-400 cursor-not-allowed">
-                Email login temporarily disabled
+              <Input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full h-12 bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+              />
+              <Button
+                onClick={handleEmailSignIn}
+                disabled={isLoading || !email || !password}
+                className="w-full h-12 bg-blue-600 text-white"
+              >
+                {isLoading ? "Signing in..." : "Continue with Email"}
               </Button>
             </div>
           </div>

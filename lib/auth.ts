@@ -1,3 +1,17 @@
+// This file is deprecated. Google authentication is now handled via Firebase in the app components.
+// If you want to implement Google Auth using Firebase, use the following example in your React component:
+//
+// import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+// import { auth } from "../app/firebase/config";
+//
+// const handleGoogleSignIn = async () => {
+//   const provider = new GoogleAuthProvider();
+//   await signInWithPopup(auth, provider);
+//   // handle redirect or user state here
+// };
+//
+// You can safely delete this file if you no longer use NextAuth.
+
 import type { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 

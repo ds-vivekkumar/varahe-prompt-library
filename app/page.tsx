@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { onAuthStateChanged } from "firebase/auth"
+import { auth } from "../app/firebase/config"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Search } from "lucide-react"
@@ -13,6 +16,15 @@ import { AskAIChat } from "@/components/ask-ai-chat"
 
 export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user)
+    })
+    return () => unsubscribe()
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -57,12 +69,20 @@ export default function Home() {
             <Link href="/research" className="text-sm font-medium text-gray-600 hover:text-gray-900">
               Research
             </Link>
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">
-              Login
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-black text-white hover:bg-gray-800">Sign up</Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/logout" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                Logout
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                  Login
+                </Link>
+                <Link href="/signup">
+                  <Button className="bg-black text-white hover:bg-gray-800">Sign up</Button>
+                </Link>
+              </>
+            )}
             <ModeToggle />
           </div>
         </div>
